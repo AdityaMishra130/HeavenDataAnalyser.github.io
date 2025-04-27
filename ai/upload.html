@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Upload Data - AI Data Analyser</title>
+  
+  <!-- Tailwind CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
+
+  <!-- AOS (Animate On Scroll) -->
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet"/>
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+</head>
+<body class="bg-gradient-to-br from-black to-gray-900 text-white min-h-screen flex flex-col items-center justify-center p-6">
+
+  <div class="max-w-xl w-full bg-gray-800 p-8 rounded-xl shadow-2xl" data-aos="fade-up">
+    <h1 class="text-3xl font-bold mb-6 text-center">📤 Upload Your Data</h1>
+
+    <input type="file" id="fileInput" accept=".csv,.pdf,.doc,.docx,.txt,.json" class="w-full p-3 bg-gray-700 rounded mb-4 text-white">
+
+    <button id="uploadBtn" class="bg-purple-600 hover:bg-purple-700 w-full py-2 rounded text-lg font-semibold transition">
+      Analyze Now
+    </button>
+
+    <p id="status" class="text-green-400 mt-4 text-center hidden">✅ File uploaded successfully!</p>
+    <p id="fileName" class="text-gray-300 mt-2 text-center text-sm hidden"></p>
+  </div>
+
+  <script>
+    AOS.init();
+
+    const uploadBtn = document.getElementById('uploadBtn');
+    const fileInput = document.getElementById('fileInput');
+    const statusMsg = document.getElementById('status');
+    const fileName = document.getElementById('fileName');
+
+    uploadBtn.addEventListener('click', () => {
+      const file = fileInput.files[0];
+      if (!file) {
+        alert('Please select a file.');
+        return;
+      }
+
+      const allowedTypes = [
+        'text/csv', 'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'text/plain', 'application/json'
+      ];
+
+      if (!allowedTypes.includes(file.type)) {
+        alert('Unsupported file type. Please upload a CSV, PDF, DOC, DOCX, TXT, or JSON file.');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const content = e.target.result;
+
+        // Store file info in localStorage
+        localStorage.setItem('uploadedFileName', file.name);
+        localStorage.setItem('uploadedFileType', file.type);
+        localStorage.setItem('uploadedData', content);
+
+        // Show status
+        statusMsg.classList.remove('hidden');
+        fileName.textContent = `📁 ${file.name}`;
+        fileName.classList.remove('hidden');
+
+        // Redirect after a short delay
+        setTimeout(() => {
+          window.location.href = 'analysis1.html'; // ✅ New analysis page
+        }, 1200);
+      };
+
+      // Read as text or base64 depending on file type
+      if (file.type.startsWith("text") || file.type === "application/json" || file.name.endsWith(".csv")) {
+        reader.readAsText(file);
+      } else {
+        reader.readAsDataURL(file);
+      }
+    });
+  </script>
+</body>
+</html>

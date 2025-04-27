@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard - AI Data Analyser</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet"/>
+  <style>
+    .glow {
+      box-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
+      transition: all 0.3s ease;
+    }
+    .glow:hover {
+      box-shadow: 0 0 30px rgba(168, 85, 247, 0.8), 0 0 10px rgba(255, 255, 255, 0.1);
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-gray-900 to-black text-white min-h-screen">
+  
+  <!-- Header -->
+  <header class="p-6 flex justify-between items-center shadow-md sticky top-0 bg-gray-900 z-50" data-aos="fade-down">
+    <h1 class="text-3xl font-bold text-purple-400 tracking-wide">AI Data Analyser</h1>
+    <a href="index.html" class="text-purple-400 hover:text-purple-300 transition duration-300">Home</a>
+  </header>
+  
+  <!-- Main Section -->
+  <main class="p-10" data-aos="fade-up" data-aos-delay="200">
+    <h2 class="text-4xl font-semibold mb-6 text-center animate-pulse">Welcome, Guest Analyst 👋</h2>
+    
+    <div class="grid md:grid-cols-2 gap-8 mt-10">
+      <!-- Upload Data Card -->
+      <a href="upload.html" class="bg-gray-800 rounded-xl p-8 glow hover:bg-purple-700 transition shadow-lg transform hover:scale-105" data-aos="fade-right" data-aos-delay="300">
+        <h3 class="text-2xl font-bold mb-2">📤 Upload Data</h3>
+        <p class="text-gray-300">Submit your CSV file and prepare for analysis.</p>
+      </a>
+  
+      <!-- View Analysis Card -->
+      <a href="analysis.html" class="bg-gray-800 rounded-xl p-8 glow hover:bg-purple-700 transition shadow-lg transform hover:scale-105" data-aos="fade-left" data-aos-delay="300">
+        <h3 class="text-2xl font-bold mb-2">📊 View Analysis</h3>
+        <p class="text-gray-300">Explore AI-powered insights and visualizations.</p>
+      </a>
+    </div>
+    
+    <div class="mt-16 bg-gray-800 p-6 rounded-xl text-center shadow-md" data-aos="zoom-in" data-aos-delay="400">
+      <p class="text-lg text-gray-200">
+        Your uploaded data will be stored temporarily in your browser.<br>No server or login required!
+      </p>
+    </div>
+    
+    <!-- Extra CTA -->
+    <div class="mt-10 text-center" data-aos="fade-up" data-aos-delay="500">
+      <a href="upload.html" class="inline-block mt-6 px-6 py-3 bg-purple-600 hover:bg-purple-800 text-white text-lg font-medium rounded-full transition transform hover:scale-105">
+        🚀 Continue to Analysis
+      </a>
+    </div>
+  </main>
+  
+  <!-- Chat Assistant Floating Button -->
+  <div id="chatToggle" class="fixed bottom-6 right-6 bg-purple-600 hover:bg-purple-800 text-white p-4 rounded-full cursor-pointer shadow-lg z-50">
+    💬
+  </div>
+  
+  <!-- Chat Modal -->
+  <div id="chatBox" class="fixed bottom-20 right-6 w-80 bg-gray-900 text-white rounded-xl shadow-xl overflow-hidden hidden z-50">
+    <div class="p-4 bg-purple-700 text-white font-bold">🤖 AI Assistant</div>
+    <div class="p-4 space-y-2 h-60 overflow-y-auto" id="chatMessages">
+      <div class="bg-gray-800 p-3 rounded-lg">
+        Hi, I'm your AI assistant 👋<br>What are you looking for today?
+      </div>
+    </div>
+    <div class="flex p-2 border-t border-purple-600">
+      <input id="userInput" type="text" placeholder="Ask something..." class="flex-1 p-2 text-sm bg-gray-800 text-white rounded-l-lg outline-none" />
+      <button id="sendBtn" class="bg-purple-600 hover:bg-purple-800 px-3 rounded-r-lg">
+        Send
+      </button>
+    </div>
+  </div>
+  
+  <!-- Scripts -->
+  <script>
+    AOS.init({ duration: 700, once: true });
+
+    const chatToggle = document.getElementById('chatToggle');
+    const chatBox = document.getElementById('chatBox');
+    const sendBtn = document.getElementById('sendBtn');
+    const userInput = document.getElementById('userInput');
+    const chatMessages = document.getElementById('chatMessages');
+
+    chatToggle.addEventListener('click', () => {
+      chatBox.classList.toggle('hidden');
+    });
+
+    sendBtn.addEventListener('click', handleMessage);
+    userInput.addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') handleMessage();
+    });
+
+    function handleMessage() {
+      const msg = userInput.value.trim();
+      if (!msg) return;
+      appendMessage(msg, 'user');
+      userInput.value = '';
+      setTimeout(() => {
+        simulateAIResponse(msg);
+      }, 600); // Simulate typing delay
+    }
+
+    function appendMessage(text, sender = 'ai') {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `p-3 rounded-lg ${sender === 'user' ? 'bg-purple-600 self-end text-white' : 'bg-gray-800 text-white'}`;
+      msgDiv.textContent = text;
+      chatMessages.appendChild(msgDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function simulateAIResponse(userMsg) {
+      appendMessage("AI is typing...", 'ai');
+
+      setTimeout(() => {
+        fetch('chat_api.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: userMsg })
+        })
+        .then(res => res.json())
+        .then(data => {
+          console.log(data);  // Debugging: Check what is returned from the API
+          const reply = data.response || "I couldn't understand that.";
+          appendMessage(reply);
+        })
+        .catch(error => {
+          console.error(error);
+          appendMessage("Sorry, something went wrong!");
+        });
+      }, 1000); // Simulate delay in AI response
+    }
+
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        chatBox.classList.remove('hidden');
+      }, 1000);
+    });
+  </script>
+</body>
+</html>

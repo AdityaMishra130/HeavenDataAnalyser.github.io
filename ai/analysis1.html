@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Analysis - AI Data Analyser</title>
+
+  <!-- Tailwind CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+
+  <!-- AOS Animation -->
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    .typing-text::after {
+      content: '|';
+      animation: blink 1s infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 0; }
+      50% { opacity: 1; }
+    }
+  </style>
+</head>
+<body class="bg-black text-white p-6">
+  <h1 class="text-4xl font-bold mb-8 text-center" data-aos="zoom-in">
+    📊 AI-Powered Data Insights
+  </h1>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+    <!-- Graph Section -->
+    <div class="bg-gray-800 rounded-xl p-6 shadow-xl" data-aos="fade-right">
+      <h2 class="text-2xl font-semibold mb-4">📈 Graphical Overview</h2>
+      <canvas id="dataChart" class="w-full h-64"></canvas>
+    </div>
+
+    <!-- AI Analysis Section -->
+    <div class="bg-gray-800 rounded-xl p-6 shadow-xl" data-aos="fade-left">
+      <h2 class="text-2xl font-semibold mb-4">🧠 AI Analysis</h2>
+      <p id="analysisText" class="text-lg leading-relaxed typing-text"></p>
+    </div>
+  </div>
+
+  <!-- Back to Dashboard Button -->
+  <div class="mt-8 text-center">
+    <button id="backBtn" class="px-6 py-2 bg-purple-600 hover:bg-purple-800 text-white text-lg font-medium rounded-full transition transform hover:scale-105">
+      ← Back to Dashboard
+    </button>
+  </div>
+
+  <script>
+    AOS.init();
+
+    // Retrieve uploaded file info from localStorage
+    const rawData = localStorage.getItem("uploadedData") || "";
+    const fileName = localStorage.getItem("uploadedFileName") || "No file";
+    const fileType = localStorage.getItem("uploadedFileType") || "text/plain";
+
+    let chartInstance;
+
+    function parseCSV(data) {
+      const lines = data.trim().split("\n");
+      const labels = [];
+      const values = [];
+      // Assume first row is header and the second column is numeric
+      for (let i = 1; i < lines.length && i < 15; i++) {
+        const row = lines[i].split(",");
+        if (row.length >= 2) {
+          labels.push(row[0].trim());
+          values.push(Number(row[1]) || 0);
+        }
+      }
+      return { labels, values };
+    }
+
+    function generateChart(labels, values) {
+      const ctx = document.getElementById("dataChart").getContext("2d");
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Sample Data',
+            data: values,
+            backgroundColor: '#8B5CF6'
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: { beginAtZero: true, ticks: { color: "#fff" }},
+            x: { ticks: { color: "#fff" }}
+          }
+        }
+      });
+    }
+
+    function typeTextEffect(text, elementId, speed = 30) {
+      let i = 0;
+      const element = document.getElementById(elementId);
+      element.textContent = "";
+      function type() {
+        if (i < text.length) {
+          element.textContent += text.charAt(i);
+          i++;
+          setTimeout(type, speed);
+        }
+      }
+      type();
+    }
+
+    async function fetchAIAnalysis(promptText) {
+      try {
+        const res = await fetch("proxy.php", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: promptText })
+        });
+        const result = await res.json();
+        return result.choices?.[0]?.message?.content || "⚠️ No AI response received.";
+      } catch (err) {
+        return "⚠️ Error fetching AI analysis.";
+      }
+    }
+
+    async function runAnalysis() {
+      if (fileType.includes("csv") && rawData) {
+        const { labels, values } = parseCSV(rawData);
+        // Check if CSV contains numeric data in the second column
+        if (values.every(v => v === 0)) {
+          generateChart(["Invalid Data"], [0]);
+          typeTextEffect("⚠️ The CSV file may not have proper numerical data in the second column.", "analysisText");
+          return;
+        }
+        generateChart(labels, values);
+
+        let prompt = `Analyze the following CSV data titled "${fileName}" and explain trends, spikes, averages, and observations:\n\n`;
+        for (let i = 0; i < labels.length; i++) {
+          prompt += `${labels[i]}: ${values[i]}\n`;
+        }
+        if (labels.length >= 14) {
+          prompt += "\n(Note: Only the first 14 rows were analyzed.)\n";
+        }
+
+        typeTextEffect("🔄 Analyzing data with AI...", "analysisText");
+        const aiResponse = await fetchAIAnalysis(prompt);
+        typeTextEffect(aiResponse, "analysisText", 30);
+      } else {
+        generateChart(["No Data"], [0]);
+        typeTextEffect("⚠️ No CSV file was uploaded. Please upload data first.", "analysisText");
+      }
+    }
+
+    runAnalysis();
+
+    // Back to Dashboard button functionality
+    document.getElementById("backBtn").addEventListener("click", () => {
+      window.location.href = "dashboard.html";
+    });
+  </script>
+</body>
+</html>
